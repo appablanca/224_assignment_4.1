@@ -2,18 +2,18 @@ import java.util.*;
 
 public class TrieST<Value> {
 
-    public static final int R = 256;        // extended ASCII
-    public Node root;      // root of trie
-    public int n;          // number of keys in trie
+    public static final int R = 256;        
+    public Node root = new Node();     
+    public int n;          
 
     public static class Node {
         public Object val;
         public Node[] next = new Node[R];
+        public int count;
     }
 
 
     public Value get(String key) {
-        if (key == null) throw new IllegalArgumentException("argument to get() is null");
         Node x = get(root, key, 0);
         if (x == null) return null;
         return (Value) x.val;
@@ -21,7 +21,6 @@ public class TrieST<Value> {
 
     
     public boolean contains(String key) {
-        if (key == null) throw new IllegalArgumentException("argument to contains() is null");
         return get(key) != null;
     }
 
@@ -34,21 +33,57 @@ public class TrieST<Value> {
 
    
     public void put(String key, Value val) {
-        if (key == null) throw new IllegalArgumentException("first argument to put() is null");
-        if (val == null) delete(key);
-        else root = put(root, key, val, 0);
+        root = put(root, key, val, 0);
     }
 
     public Node put(Node x, String key, Value val, int d) {
         if (x == null) x = new Node();
         if (d == key.length()) {
-            if (x.val == null) n++;
             x.val = val;
             return x;
         }
         char c = key.charAt(d);
         x.next[c] = put(x.next[c], key, val, d+1);
         return x;
+    }
+
+    public int[] countPrefix(TrieST trie){
+        int[] result = new int[trie.size()];
+        countPrefix(trie.root, "", result);
+        return result;
+    }   
+    
+    public void countPrefix(Node x, String prefix, int[] result){
+        if(x == null) return;
+        if(x.val != null){
+            result[prefix.length()]++;
+        }
+        for(char c = 0; c < R; c++){
+            countPrefix(x.next[c], prefix + c, result);
+        }
+    }
+    public String[] reverseFind(String suffix){
+        Queue<String> queue = new LinkedList<String>();
+        reverseFind(root, "", suffix, queue);
+        String[] result = new String[queue.size()];
+        int i = 0;
+        while(!queue.isEmpty()){
+            result[i] = queue.poll();
+            i++;
+        }
+        
+
+        return result;
+    }
+
+    public void reverseFind(Node x, String prefix, String suffix, Queue<String> queue){
+        if(x == null) return;
+        if(x.val != null && prefix.endsWith(suffix)){
+            queue.offer(prefix);
+        }
+        for(char c = 0; c < R; c++){
+            reverseFind(x.next[c], prefix + c, suffix, queue);
+        }
     }
 
     public int size() {
@@ -80,11 +115,7 @@ public class TrieST<Value> {
         }
     }
 
-    public Iterable<String> keysThatMatch(String pattern) {
-        Queue<String> results = new LinkedList<String>();
-        collect(root, new StringBuilder(), pattern, results);
-        return results;
-    }
+    
 
     public void collect(Node x, StringBuilder prefix, String pattern, Queue<String> results) {
         if (x == null) return;
@@ -109,42 +140,7 @@ public class TrieST<Value> {
     }
 
 
-    public String longestPrefixOf(String query) {
-        if (query == null) throw new IllegalArgumentException("argument to longestPrefixOf() is null");
-        int length = longestPrefixOf(root, query, 0, -1);
-        if (length == -1) return null;
-        else return query.substring(0, length);
-    }
-
-    public int longestPrefixOf(Node x, String query, int d, int length) {
-        if (x == null) return length;
-        if (x.val != null) length = d;
-        if (d == query.length()) return length;
-        char c = query.charAt(d);
-        return longestPrefixOf(x.next[c], query, d+1, length);
-    }
+    
 
 
-    public void delete(String key) {
-        if (key == null) throw new IllegalArgumentException("argument to delete() is null");
-        root = delete(root, key, 0);
-    }
-
-    public Node delete(Node x, String key, int d) {
-        if (x == null) return null;
-        if (d == key.length()) {
-            if (x.val != null) n--;
-            x.val = null;
-        }
-        else {
-            char c = key.charAt(d);
-            x.next[c] = delete(x.next[c], key, d+1);
-        }
-
-        if (x.val != null) return x;
-        for (int c = 0; c < R; c++)
-            if (x.next[c] != null)
-                return x;
-        return null;
-    }
 }
